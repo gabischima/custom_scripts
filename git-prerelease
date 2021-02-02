@@ -1,0 +1,76 @@
+# .
+# git-prerelease - automation for alpha, beta, pre-release tags
+# .
+# .
+
+# VERSION_PREFIX=$(eval "echo `git config --get gitflow.prefix.versiontag`")
+# echo $VERSION_PREFIX
+
+cmd_get_current() {
+  latest_tag=`git describe`
+  echo "##### LATEST  TAG #####"
+  echo "#                     #"
+  echo "#    "$latest_tag"    #"
+  echo "#                     #"
+  echo "#######################"
+  echo ""
+  read -p "Iterate this tag? " yn
+}
+
+cmd_create_tag() {
+  cmd_get_current
+  read -p "Iterate this tag? " yn
+}
+
+# get branch name
+branch_full=`git branch --show-current`
+
+# split name with / char
+IFS='/'
+read -rasplitIFS<<< "$branch_full"
+# get branch prefix:
+# - feature
+# - support
+# - release
+# - hotfix
+# - main
+# - develop
+prefix=${splitIFS[0]}
+name=${splitIFS[1]}
+case $prefix in
+  feature)
+    echo " ----> feature named" $name
+    ;;
+  support)
+    echo " ----> support named" $name
+    ;;
+  main)
+    echo " ----> i'm main"
+    ;;
+  develop)
+    echo " ----> i'm develop"
+    ;;
+  hotfix)
+    echo " ----> hotfix version "$name
+    ;;
+  release)
+    echo " ----> release version "$name
+    ;;
+esac
+
+# ask user if tag is to be created
+# until valid choice
+while true; do
+  read -p "Create new beta tag? " yn
+  case $yn in
+    [Yy]* )
+      echo "You chose YES"
+      cmd_create_tag
+      break;;
+    [Nn]* )
+      exit;;
+    * )
+      echo "Please answer yes or no."
+      ;;
+  esac
+done
