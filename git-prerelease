@@ -22,12 +22,63 @@ print_message () {
   echo "---------------------------------------------"
 }
 
+cmd_create_tag() {
+  git tag -a "$NEW_VERSION" -m "$MESSAGE"
+  LATEST_TAG=`git for-each-ref --count=1 --sort=-refname --format '%(tag)' refs/tags --merged`
+  if [ "$LATEST_TAG" == "$NEW_VERSION" ] ; then
+    MSG_ONE="Success!"
+    MSG_TWO="New tag created: $LATEST_TAG"
+  else
+    MSG_ONE="Error! Something went wrong."
+    MSG_TWO="New version: $NEW_VERSION | Latest tag: $LATEST_TAG"
+  fi
+  print_message
+  echo ""
+}
+
+cmd_iterate_tag() {
+  while true; do
+    echo ""
+    read -p "Iterate this tag? " yn
+    case $yn in
+      [Yy]* )
+        IFS="+"
+        read -ra SPLIT_IFS <<< "$LATEST_TAG"
+        NEXT=$(( ${SPLIT_IFS[1]} + 1 ))
+        NEW_VERSION="${SPLIT_IFS[0]}+$NEXT"
+        cmd_create_tag
+        break
+        ;;
+      [Nn]* )
+        # ASK TAG NAME
+        ;;
+      * )
+        echo "Please answer yes or no."
+        ;;
+    esac
+  done
+}
+
+cmd_get_latest_tag() {
+  # latest tag merged at release branch
+  # refs: https://git-scm.com/docs/git-for-each-ref/en
+  if [ "$LATEST_TAG" == "" ] ; then
+    echo "no tag"
+  else
+    MSG_ONE="Latest tag is:"
+    MSG_TWO="$LATEST_TAG"
+    print_message
+    cmd_iterate_tag
+  fi
+}
+
 # get branch name
-branch_full=`git branch --show-current`
+BRANCH_FULL_NANE=`git branch --show-current`
+LATEST_TAG=`git for-each-ref --count=1 --sort=-refname --format '%(tag)' refs/tags --merged`
 
 # split name with / char
-IFS='/'
-read -rasplitIFS<<< "$branch_full"
+IFS="/"
+read -ra SPLIT_IFS <<< "$BRANCH_FULL_NANE"
 
 # get branch prefix:
 #   - feature
@@ -36,32 +87,32 @@ read -rasplitIFS<<< "$branch_full"
 #   - hotfix
 #   - main
 #   - develop
-prefix=${splitIFS[0]}
+BRANCH_PREFIX=${SPLIT_IFS[0]}
 
-# get branch name
-name=${splitIFS[1]}
+# get release version number
+VERSION_NUMBER=${SPLIT_IFS[1]}
 
-if [ $prefix != "release" ] ; then
+if [ $BRANCH_PREFIX != "release" ] ; then
   MSG_ONE="This is not a release branch."
   MSG_TWO="Please, checkout to create a pre-release tag."
   print_message
   exit 0
 fi
 
-type=''
-message=''
+TYPE=""
+MESSAGE=""
 
 PARAMS=""
 
 while (( "$#" )); do
   case "$1" in
     -t|--type)
-      type=$2
+      TYPE=$2
       echo "$type"
       shift
       ;;
     -m|--message)
-      message=$2
+      MESSAGE=$2
       echo "$message"
       shift
       ;;
@@ -77,3 +128,5 @@ while (( "$#" )); do
       ;;
   esac
 done
+
+cmd_get_latest_tag
