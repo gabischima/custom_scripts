@@ -10,123 +10,203 @@ MSG_ONE=""
 MSG_TWO=""
 
 print_usage() {
-  # TO DO
-  echo "Usage: ..."
+  echo "\
+
+git prerelease [-t] [-m] [-i] [-h]
+
+Create tag for prerelease.
+--
+-t | --type          Type of prerelease: alpha, beta or rc.
+-m | --message       Message for the tag.
+-i | --iterate       Iterate previous tag.
+-h | --help          Print usage.
+"
 }
 
-print_message () {
+print_message() {
   echo ""
   echo "---------------------------------------------"
   echo "$MSG_ONE"
   echo "$MSG_TWO"
   echo "---------------------------------------------"
+  MSG_ONE=""
+  MSG_TWO=""
 }
 
-cmd_create_tag() {
+create_tag() {
   git tag -a "$NEW_VERSION" -m "$MESSAGE"
-  LATEST_TAG=`git for-each-ref --count=1 --sort=-refname --format '%(tag)' refs/tags --merged`
-  if [ "$LATEST_TAG" == "$NEW_VERSION" ] ; then
-    MSG_ONE="Success!"
-    MSG_TWO="New tag created: $LATEST_TAG"
-  else
-    MSG_ONE="Error! Something went wrong."
-    MSG_TWO="New version: $NEW_VERSION | Latest tag: $LATEST_TAG"
-  fi
+  MSG_ONE="Success!"
+  MSG_TWO="New tag created: $NEW_VERSION"
   print_message
   echo ""
+  if [ $PUSH = true ] ; then
+    git push origin "$NEW_VERSION"
+  fi
 }
 
-cmd_iterate_tag() {
-  while true; do
-    echo ""
-    read -p "Iterate this tag? " yn
-    case $yn in
-      [Yy]* )
-        IFS="+"
-        read -ra SPLIT_IFS <<< "$LATEST_TAG"
-        NEXT=$(( ${SPLIT_IFS[1]} + 1 ))
-        NEW_VERSION="${SPLIT_IFS[0]}+$NEXT"
-        cmd_create_tag
-        break
-        ;;
-      [Nn]* )
-        # ASK TAG NAME
-        ;;
-      * )
-        echo "Please answer yes or no."
+select_tag_type() {
+  echo ""
+  echo "Select the tag type"
+  select SELECT in alpha beta rc
+  do
+    case $SELECT in
+        "alpha"|"beta"|"rc")
+          NEW_VERSION="v$VERSION_NUMBER-$SELECT+1"
+          create_tag
+          break
+          ;;
+        *)
+          echo "ERROR: Invalid selection. Select 1..3"
         ;;
     esac
   done
 }
 
-cmd_get_latest_tag() {
+iterate_tag() {
+  IFS="+"
+  read -ra SPLIT_IFS <<< "$LATEST_TAG"
+  NEXT=$(( ${SPLIT_IFS[1]} + 1 ))
+  NEW_VERSION="${SPLIT_IFS[0]}+$NEXT"
+}
+
+confirm_iterate() {
+  while true; do
+    echo ""
+    read -p "Iterate this tag? [y|n] " yn
+    case $yn in
+      [Yy]* )
+        iterate_tag
+        create_tag
+        break
+        ;;
+      [Nn]* )
+        # ASK TAG NAME
+        select_tag_type
+        break
+        ;;
+      * )
+        echo "Please answer y or no."
+        ;;
+    esac
+  done
+}
+
+confirm() {
+  NEW_VERSION="v$VERSION_NUMBER-$TYPE+1"
+  while true; do
+    echo ""
+    read -p "Create tag '$NEW_VERSION'? [y|n] " yn
+    case $yn in
+      [Yy]* )
+        create_tag
+        break
+        ;;
+      [Nn]* )
+        exit 0
+        break
+        ;;
+      * )
+        echo "Please answer y or n."
+        ;;
+    esac
+  done
+}
+
+get_latest_tag() {
   # latest tag merged at release branch
   # refs: https://git-scm.com/docs/git-for-each-ref/en
-  if [ "$LATEST_TAG" == "" ] ; then
-    echo "no tag"
+  if [[ "$LATEST_TAG" == "" ]] ; then
+    create_tag
   else
-    MSG_ONE="Latest tag is:"
-    MSG_TWO="$LATEST_TAG"
-    print_message
-    cmd_iterate_tag
+    if [ $ITERATE = true ] ; then
+      iterate_tag
+      create_tag
+    else
+      MSG_ONE="Latest tag is:"
+      MSG_TWO="$LATEST_TAG"
+      print_message
+      confirm_iterate
+    fi
   fi
 }
 
-# get branch name
-BRANCH_FULL_NANE=`git branch --show-current`
-LATEST_TAG=`git for-each-ref --count=1 --sort=-refname --format '%(tag)' refs/tags --merged`
+main() {
 
-# split name with / char
-IFS="/"
-read -ra SPLIT_IFS <<< "$BRANCH_FULL_NANE"
+  # get branch name
+  BRANCH_FULL_NANE=`git branch --show-current`
+  LATEST_TAG=`git for-each-ref --count=1 --sort=-refname --format '%(tag)' refs/tags/v$VERSION_NUMBER* --merged`
 
-# get branch prefix:
-#   - feature
-#   - support
-#   - release
-#   - hotfix
-#   - main
-#   - develop
-BRANCH_PREFIX=${SPLIT_IFS[0]}
+  # split name with / char
+  IFS="/"
+  read -ra SPLIT_IFS <<< "$BRANCH_FULL_NANE"
 
-# get release version number
-VERSION_NUMBER=${SPLIT_IFS[1]}
+  # get branch prefix:
+  #   - feature
+  #   - support
+  #   - release
+  #   - hotfix
+  #   - main
+  #   - develop
+  BRANCH_PREFIX=${SPLIT_IFS[0]}
 
-if [ $BRANCH_PREFIX != "release" ] ; then
-  MSG_ONE="This is not a release branch."
-  MSG_TWO="Please, checkout to create a pre-release tag."
-  print_message
-  exit 0
-fi
+  # get release version number
+  VERSION_NUMBER=${SPLIT_IFS[1]}
 
-TYPE=""
-MESSAGE=""
+  if [ $BRANCH_PREFIX != "release" ] ; then
+    MSG_ONE="This is not a release branch."
+    MSG_TWO="Please, checkout to create a pre-release tag."
+    print_message
+    exit 0
+  fi
 
-PARAMS=""
+  TYPE=""
+  MESSAGE=""
+  ITERATE=false
+  PUSH=false
 
-while (( "$#" )); do
-  case "$1" in
-    -t|--type)
-      TYPE=$2
-      echo "$type"
-      shift
-      ;;
-    -m|--message)
-      MESSAGE=$2
-      echo "$message"
-      shift
-      ;;
-    -*|--*=) # unsupported flags
-      MSG_ONE="Error"
-      MSG_TWO="This flag does not exist: $1" >&2
-      print_message
-      exit 1
-      ;;
-    *) # preserve positional arguments
-      PARAMS="$PARAMS $1"
-      shift
-      ;;
-  esac
-done
+  PARAMS=""
 
-cmd_get_latest_tag
+  while (( "$#" )); do
+    case "$1" in
+      -t|--type)
+        if [[ "$2" == "alpha" || "$2" == "beta" || "$2" == "rc" ]] ; then
+          TYPE=$2
+          LATEST_TAG=`git for-each-ref --count=1 --sort=-refname --format '%(tag)' refs/tags/v$VERSION_NUMBER-$TYPE* --merged`
+          shift
+        else
+          echo "Value '$2' for TYPE is invalid."
+        fi
+        ;;
+      -m|--message)
+        MESSAGE=$2
+        shift
+        ;;
+      -i|--iterate)
+        ITERATE=true
+        shift
+        ;;
+      -p|--push)
+        PUSH=true
+        shift
+        ;;
+      -h|--help)
+        print_usage
+        exit 1
+        ;;
+      -*|--*=)
+        # unsupported flags
+        MSG_ONE="ERROR:"
+        MSG_TWO="This flag does not exist: $1" >&2
+        print_message
+        exit 1
+        ;;
+      *) # preserve positional arguments
+        PARAMS="$PARAMS $1"
+        shift
+        ;;
+    esac
+  done
+  get_latest_tag
+}
+
+main "$@"
