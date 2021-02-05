@@ -35,10 +35,14 @@ print_message() {
 
 create_tag() {
   git tag -a "$NEW_VERSION" -m "$MESSAGE"
-  MSG_ONE="Success!"
-  MSG_TWO="New tag created: $NEW_VERSION"
-  print_message
+  TAG=`git for-each-ref --count=1 --sort=-taggerdate --format '%(tag)' refs/tags/v$VERSION_NUMBER* --merged`
+  if [ "$TAG" == "$NEW_VERSION" ] ; then
+    MSG_ONE="Success!"
+    MSG_TWO="New tag created: $TAG"
+    print_message
+  fi
   echo ""
+  # TESTAR
   if [ $PUSH = true ] ; then
     git push origin "$NEW_VERSION"
   fi
@@ -131,7 +135,6 @@ get_latest_tag() {
 }
 
 main() {
-
   # get branch name
   BRANCH_FULL_NANE=`git branch --show-current`
   LATEST_TAG=`git for-each-ref --count=1 --sort=-refname --format '%(tag)' refs/tags/v$VERSION_NUMBER* --merged`
