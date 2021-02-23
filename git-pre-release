@@ -12,14 +12,15 @@ MSG_TWO=""
 print_usage() {
   echo "\
 
-git prerelease [-t] [-m] [-i] [-h]
+git pre-release [-t] [-m] [-i] [-h]
 
-Create tag for prerelease.
---
--t | --type          Type of prerelease: alpha, beta or rc.
--m | --message       Message for the tag.
--i | --iterate       Iterate previous tag.
--h | --help          Print usage.
+Create tag for prerelease
+-----------------------------------------------------------
+-t | --type          Type of pre-release: alpha, beta or rc
+-m | --message       Message for the tag
+-i | --iterate       Iterate previous tag
+-h | --help          Print usage
+-----------------------------------------------------------
 "
 }
 
