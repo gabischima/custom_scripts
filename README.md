@@ -1,6 +1,14 @@
 # bash git custom script
 Repository extending git
 
-## git-prerelease
+## Addinng command
+Copy the script file to:
 
-Create a alpha/beta/rc tag at current release branch.
+```
+# mac
+/usr/local/bin
+```
+
+## git-pre-release
+
+Create a alpha/beta/rc tag when in a release branch.
