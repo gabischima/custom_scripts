@@ -138,8 +138,6 @@ get_latest_tag() {
 main() {
   # get branch name
   BRANCH_FULL_NANE=`git branch --show-current`
-  LATEST_TAG=`git for-each-ref --count=1 --sort=-refname --format '%(tag)' refs/tags/v$VERSION_NUMBER* --merged`
-
   # split name with / char
   IFS="/"
   read -ra SPLIT_IFS <<< "$BRANCH_FULL_NANE"
@@ -155,6 +153,8 @@ main() {
 
   # get release version number
   VERSION_NUMBER=${SPLIT_IFS[1]}
+
+  LATEST_TAG=`git for-each-ref --count=1 --sort=-refname --format '%(tag)' refs/tags/v$VERSION_NUMBER* --merged`
 
   if [ $BRANCH_PREFIX != "release" ] ; then
     MSG_ONE="This is not a release branch."
