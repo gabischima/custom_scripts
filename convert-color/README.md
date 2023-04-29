@@ -3,12 +3,15 @@ color converter: Hex to RGB
 
 ## usage
 ```
+$ sh convert-color.sh [-c|--color] 000000 [-a|-alpha] [-o|--opacity] [-1|--base1] [--copy]
+
 Convert HEX color to RGB
 -----------------------------------------------------------
--c | --color         Color value in HEX
--1 | --base1         Flag for RGB numbers on base 1
--a | --alpha         Flag to display RGB with alpha value
--o | --opacity       Flag to display RGB with opacity value
+-c | --color         Pass color value in HEX
+-1 | --base1         RGB numbers on base 1
+-a | --alpha         Display RGB with alpha value
+-o | --opacity       Display RGB with opacity value
+--copy               Copy result to clipboard
 -h | --help          Print usage
 -----------------------------------------------------------
 ```
@@ -48,6 +51,17 @@ rgbo color
 (red: 0, green: 0, blue: 0, opacity: 1.0)
 ---------------------------------------------
 ```
+
+### --copy
+```
+$ sh convert-color.sh [--color|-c] 000000 --copy
+---------------------------------------------
+rgbo color
+(red: 0, green: 0, blue: 0)
+---------------------------------------------
+```
+
+the result `(red: 0, green: 0, blue: 0)` is copied to clipboard
 
 ## to do
 - [ ] RGB to HEX
