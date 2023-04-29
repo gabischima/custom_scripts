@@ -8,14 +8,15 @@
 print_usage() {
   echo "\
 
-sh convert-color.sh [-c|--color] 000000 [-a|-alpha] [-o|--opacity] [--base1]
+$ sh convert-color.sh [-c|--color] 000000 [-a|-alpha] [-o|--opacity] [-1|--base1] [--copy]
 
 Convert HEX color to RGB
 -----------------------------------------------------------
 -c | --color         Pass color value in HEX
--1 | --base1         RGB numbers on base 1
+-1 | --base1         RGB numbers on base 1. By defaylt base is 255
 -a | --alpha         Display RGB with alpha value
 -o | --opacity       Display RGB with opacity value
+--copy               Copy result to clipboard
 -h | --help          Print usage
 -----------------------------------------------------------
 "
@@ -29,6 +30,7 @@ COLOR=""
 OPACITY=false
 ALPHA=false
 BASE_ONE=false
+COPY=false
 
 print_message() {
   echo "---------------------------------------------"
@@ -71,6 +73,10 @@ convert_color() {
       SUBTITLE="${SUBTITLE})"
     fi
   fi
+  if [ $COPY = true ]
+  then
+    echo "$SUBTITLE" | pbcopy
+  fi
   print_message
 }
 
@@ -94,6 +100,10 @@ main() {
       -1|--base1)
           BASE_ONE=true
           shift
+        ;;
+      --copy)
+        COPY=true
+        exit 0
         ;;
       -h|--help)
         print_usage
