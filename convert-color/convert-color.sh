@@ -73,10 +73,13 @@ convert_color() {
       SUBTITLE="${SUBTITLE})"
     fi
   fi
+
   if [ $COPY = true ]
   then
     echo "$SUBTITLE" | pbcopy
+    echo "✨ Copied to clipboard!"
   fi
+
   print_message
 }
 
@@ -86,24 +89,24 @@ main() {
   while (( "$#" )); do
     case "$1" in
       -c|--color)
-          COLOR=$2
-          shift
+        COLOR=$2
+        shift
         ;;
       -a|--alpha)
-          ALPHA=true
-          shift
+        ALPHA=true
+        shift
         ;;
       -o|--opacity)
-          OPACITY=true
-          shift
+        OPACITY=true
+        shift
         ;;
       -1|--base1)
-          BASE_ONE=true
-          shift
+        BASE_ONE=true
+        shift
         ;;
       --copy)
         COPY=true
-        exit 0
+        shift
         ;;
       -h|--help)
         print_usage
